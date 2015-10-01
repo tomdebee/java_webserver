@@ -1,6 +1,7 @@
 package nl.sogyo.webserver;
 
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ConnectionHandler implements Runnable {
@@ -24,6 +25,19 @@ public class ConnectionHandler implements Runnable {
             writer.write("Thank you for connecting!\r\n");
             writer.flush();
             socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String... args) {
+        try {
+            ServerSocket socket = new ServerSocket(9090);
+            while(true) {
+                Socket newConnection = socket.accept();
+                Thread t = new Thread(new ConnectionHandler(newConnection));
+                t.start();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
