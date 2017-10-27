@@ -11,11 +11,7 @@ public class ConnectionHandler implements Runnable{
     public ConnectionHandler(Socket toHandle) {
         this.socket = toHandle;
     }
-    
-    
-    
-    
-    
+
     public void run()  {
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -25,36 +21,46 @@ public class ConnectionHandler implements Runnable{
             RequestParser requestParse = new RequestParser();
             ResponseMessage response = new ResponseMessage();
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            //writer.write("Thank you for connecting!\r\n");
             
             int lineCount = 0;
+
+            
             while (line !=null && !line.isEmpty()) {
                 System.out.println(line);
                 requestParse.input(line, lineCount);
                 line = reader.readLine();
                 lineCount++;
             }
-//            writer.write("You did an HTTP " + requestParse.getHTTPMethod() + " request and you requested the following resource: "
-//            		+ requestParse.getResourcePath());          
-//            for(String output : requestParse.getHeaderParameterNames()) {
-//            	writer.write("\n");
-//            	writer.write(output);
-//            	writer.write(": ");
-//            	writer.write(requestParse.getHeaderParameterValue(output));
-//            }          
-//            writer.newLine();
             
-            response.setStatus(HttpStatusCode.ServerError);
+            StringBuilder httpBody = new StringBuilder("?");
+            while(reader.ready()) {
+            	httpBody.append((char) reader.read());
+            }
+            if(httpBody.toString().length()>1) {
+            	requestParse.parseHTTPargs(httpBody.toString());;
+            }
+            
+            StringBuilder paramContent = new StringBuilder("");
+            for(String value : requestParse.getParameterNames()) {
+            	paramContent = paramContent.append(value).append(": ");
+            	paramContent = paramContent.append(requestParse.getParameterValue(value));
+        		paramContent = paramContent.append("<br/>");
+            }
+            
+            response.setStatus(HttpStatusCode.OK);
             response.setContent("<html>\r\n" + 
             		"<body>\r\n" + 
             		"You did an HTTP " + requestParse.getHTTPMethod() + " request.<br/>\r\n" + 
-            		"Requested resource: " + requestParse.getResourcePath() + "\r\n" + 
+            		"Requested resource: " + requestParse.getResourcePath() + "<br/><br/>\r\n" + 
+            		"The following parameters were passed: " + "<br/>\r\n" +
+            		paramContent.toString() + "<br/>\r\n" +
             		"</body>\r\n" + 
             		"</html>");
 
+
             writer.write(
             		requestParse.getHttpVersion() + " "
-            		+ response.getStatus().getCode()
+            		+ response.getStatus().getCode() + " "
             		+ response.getStatus().getDescription() + "\r\n"
             		+ "Date: " + response.getDate().format(DateTimeFormatter.RFC_1123_DATE_TIME) + "\r\n"
             		+ "Server: " + "minneolaserver/0.0.15" + "\r\n"
@@ -64,6 +70,7 @@ public class ConnectionHandler implements Runnable{
             		+ "\r\n" 
             		+ response.getContent()
             		);
+            
             writer.flush();
             socket.close();
         } catch (IOException e) {
