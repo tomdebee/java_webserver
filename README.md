@@ -28,7 +28,7 @@ However, instead of `Hello world!`, HTML code can be passed along as well.
 
 
 
-You can send a GET request like this: `http://localhost:9999/somefolder?parameter=value&para2=val2`. The server will reply as such:
+You can send a GET request like this: `http://localhost:9090/somefolder?parameter=value&para2=val2`. The server will reply as such:
 ```
 You did an HTTP GET request.
 Requested resource: /somefolder
